@@ -164,7 +164,7 @@ class BlackjackGame:
                 self.status_label.config(text="ПЕРЕБОР! Вы проиграли 😢")
                 self.end_game()
             elif player_score == 21:
-                self.status_label.config(text="У вас 21! Нажмите 'ОСТАНОВИТЬСЯ'")
+                self.status_label.config(text="У вас 21 Нажмите 'ОСТАНОВИТСЯ'")
 
         def stand(self):
             if self.game_over:
