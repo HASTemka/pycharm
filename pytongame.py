@@ -42,7 +42,7 @@ class BlackjackGame:
         self.dealer_label.pack(pady=10, padx=10)
 
         # Рамка для карт игрока
-        self.player_frame = tk.LabelFrame(self.root, text="Ваши карты", font=('Arial', 14, 'bold'),
+        self.player_frame = tk.LabelFrame(self.root, text="игрок", font=('Arial', 14, 'bold'),
                                           fg='white', bg='#2a4d3e', bd=3, relief='ridge')
         self.player_frame.pack(pady=10, padx=20, fill='x')
 
