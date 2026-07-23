@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
-
-        # Колода
+# Колода
 suits = ['♥', '♦', '♣', '♠']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
@@ -32,8 +31,9 @@ class BlackjackGame:
                          fg='#ffd700', bg='#1e3a2f')
         title.pack(pady=10)
 
-        # Рамка для карт дилера
-        self.dealer_frame = tk.LabelFrame(self.root, text="Дилер", font=('Arial', 14, 'bold'),
+        # Рамка для карт бота
+
+        self.dealer_frame = tk.LabelFrame(self.root, text="бот", font=('Arial', 14, 'bold'),
                                           fg='white', bg='#2a4d3e', bd=3, relief='ridge')
         self.dealer_frame.pack(pady=10, padx=20, fill='x')
 
@@ -85,90 +85,127 @@ class BlackjackGame:
         self.status_label = tk.Label(self.root, text="", font=('Arial', 14, 'italic'),
                                      fg='#ffddaa', bg='#1e3a2f')
         self.status_label.pack(pady=10)
-            #логика игры
-        def new_game(self):
-            self.deck = self.create_deck()
-            random.shuffle(self.deck)
-            self.player_hand = []
-            self.dealer_hand = []
-            self.game_over = False
-            self.status_label.config(text="Игра началась! Ваш ход.")
 
-            # Раздача начальных карт
-            self.player_hand.append(self.deck.pop())
+    # Логика игры
+    def new_game(self):
+        self.deck = self.create_deck()
+        random.shuffle(self.deck)
+        self.player_hand = []
+        self.dealer_hand = []
+        self.game_over = False
+        self.status_label.config(text="Ваш ход")
+
+        # начальные карты
+        self.player_hand.append(self.deck.pop())
+        self.dealer_hand.append(self.deck.pop())
+        self.player_hand.append(self.deck.pop())
+        self.dealer_hand.append(self.deck.pop())
+
+        self.update_display()
+        self.hit_btn.config(state='normal')
+        self.stand_btn.config(state='normal')
+
+        # Проверка на 21 у игрока
+        if self.calculate_hand(self.player_hand) == 21:
+            self.status_label.config(text="21 вы выиграли")
+            self.end_game()
+
+    def create_deck(self):
+        return [{'rank': r, 'suit': s} for s in suits for r in ranks]
+
+    def calculate_hand(self, hand):
+        total = 0
+        aces = 0
+        for card in hand:
+            rank = card['rank']
+            total += values[rank]
+            if rank == 'A':
+                aces += 1
+        while total > 21 and aces > 0:
+            total -= 10
+            aces -= 1
+        return total
+
+    def card_to_str(self, card):
+        return f"{card['rank']}{card['suit']}"
+
+    def hand_to_str(self, hand, hide_first=False):
+        if hide_first and len(hand) > 0:
+            return f"[??] {self.card_to_str(hand[1])}" if len(hand) == 2 else \
+                f"[??] " + " ".join(self.card_to_str(c) for c in hand[1:])
+        return " ".join(self.card_to_str(c) for c in hand)
+
+    def update_display(self):
+        # Карты бота
+        if self.game_over:
+            dealer_text = self.hand_to_str(self.dealer_hand, hide_first=False)
+            dealer_score = self.calculate_hand(self.dealer_hand)
+            self.dealer_score_label.config(text=f"Очки бота: {dealer_score}")
+        else:
+            dealer_text = self.hand_to_str(self.dealer_hand, hide_first=True)
+            self.dealer_score_label.config(text="Очки бота: ?")
+
+        self.dealer_label.config(text=dealer_text)
+
+        # Карты игрока
+        player_text = self.hand_to_str(self.player_hand, hide_first=False)
+        self.player_label.config(text=player_text)
+
+        player_score = self.calculate_hand(self.player_hand)
+        self.player_score_label.config(text=f"Ваши очки: {player_score}")
+
+    def hit(self):
+        if self.game_over:
+            return
+        self.player_hand.append(self.deck.pop())
+        self.update_display()
+        player_score = self.calculate_hand(self.player_hand)
+
+        if player_score > 21:
+            self.status_label.config(text="перебор вы проиграли ")
+            self.end_game()
+        elif player_score == 21:
+            self.status_label.config(text="У вас 21 Нажмите остановится")
+
+    def stand(self):
+        if self.game_over:
+            return
+        self.game_over = True
+        self.hit_btn.config(state='disabled')
+        self.stand_btn.config(state='disabled')
+
+        # Ход бота до 17
+        while self.calculate_hand(self.dealer_hand) < 17:
             self.dealer_hand.append(self.deck.pop())
-            self.player_hand.append(self.deck.pop())
-            self.dealer_hand.append(self.deck.pop())
 
-            self.update_display()
-            self.hit_btn.config(state='normal')
-            self.stand_btn.config(state='normal')
+        self.update_display()
+        self.show_result()
 
-            # Проверка на 21 у игрока
-            if self.calculate_hand(self.player_hand) == 21:
-                self.status_label.config(text="БЛЭКДЖЕК! Вы выиграли! 🎉")
-                self.end_game()
+    def show_result(self):
+        player_score = self.calculate_hand(self.player_hand)
+        dealer_score = self.calculate_hand(self.dealer_hand)
 
-        def create_deck(self):
-            return [{'rank': r, 'suit': s} for s in suits for r in ranks]
+        # обновление счета дилера
+        self.dealer_score_label.config(text=f"Очки бота: {dealer_score}")
 
-        def calculate_hand(self, hand):
-            total = 0
-            aces = 0
-            for card in hand:
-                rank = card['rank']
-                total += values[rank]
-                if rank == 'A':
-                    aces += 1
-            while total > 21 and aces > 0:
-                total -= 10
-                aces -= 1
-            return total
+        if dealer_score > 21:
+            self.status_label.config(text="бот проиграл вы выиграли")
+        elif player_score > dealer_score:
+            self.status_label.config(text="Вы выиграли")
+        elif player_score < dealer_score:
+            self.status_label.config(text="бот выиграл")
+        else:
+            self.status_label.config(text="Ничья")
 
-        def card_to_str(self, card):
-            return f"{card['rank']}{card['suit']}"
+        self.end_game()
 
-        def hand_to_str(self, hand, hide_first=False):
-            if hide_first and len(hand) > 0:
-                return f"[??] {self.card_to_str(hand[1])}" if len(hand) == 2 else \
-                    f"[??] " + " ".join(self.card_to_str(c) for c in hand[1:])
-            return " ".join(self.card_to_str(c) for c in hand)
+    def end_game(self):
+        self.game_over = True
+        self.hit_btn.config(state='disabled')
+        self.stand_btn.config(state='disabled')
+        self.update_display()
 
-        def update_display(self):
-            # Карты дилера
-            if self.game_over:
-                dealer_text = self.hand_to_str(self.dealer_hand, hide_first=False)
-                dealer_score = self.calculate_hand(self.dealer_hand)
-                self.dealer_score_label.config(text=f"Очки дилера: {dealer_score}")
-            else:
-                dealer_text = self.hand_to_str(self.dealer_hand, hide_first=True)
-                self.dealer_score_label.config(text="Очки дилера: ?")
-
-            self.dealer_label.config(text=dealer_text)
-
-            # Карты игрока
-            player_text = self.hand_to_str(self.player_hand, hide_first=False)
-            self.player_label.config(text=player_text)
-
-            player_score = self.calculate_hand(self.player_hand)
-            self.player_score_label.config(text=f"Ваши очки: {player_score}")
-
-        def hit(self):
-            if self.game_over:
-                return
-            self.player_hand.append(self.deck.pop())
-            self.update_display()
-            player_score = self.calculate_hand(self.player_hand)
-
-            if player_score > 21:
-                self.status_label.config(text="ПЕРЕБОР! Вы проиграли 😢")
-                self.end_game()
-            elif player_score == 21:
-                self.status_label.config(text="У вас 21 Нажмите 'ОСТАНОВИТСЯ'")
-
-        def stand(self):
-            if self.game_over:
-                return
-            self.game_over = True
-            self.hit_btn.config(state='disabled')
-            self.stand_btn.config(state='disabled')
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = BlackjackGame(root)
+    root.mainloop()
